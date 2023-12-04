@@ -78,11 +78,11 @@ impl Component {
     }
 }
 
-
 #[derive(Debug, Default, Clone)]
 struct Schematic {
     components: Vec<Component>,
     symbols: Vec<Pos>,
+    symbols_vals: Vec<u8>,
     area: Area,
 }
 
@@ -106,6 +106,7 @@ impl Schematic {
                 i += 1;
             } else if !bytes[i].is_ascii_digit() {
                 self.symbols.push(Pos::new(i as u32, y));
+                self.symbols_vals.push(bytes[i]);
                 i += 1;
             } else {
                 let x = i as u32;
@@ -120,32 +121,13 @@ impl Schematic {
             }
         }
         return;
-        
-
-        // let chunks: Vec<&str> = line.split(".").collect();
-        // for chunk in chunks {
-        //     if chunk == "" {
-        //         x += 1;
-        //         dbg!(x, "empty");
-        //         continue;
-        //     } else if chunk.as_bytes().iter().all(|x| x.is_ascii_digit()) {
-        //         let pos = Pos::new(x, y);
-        //         dbg!(pos);
-        //         let len = chunk.len() as u32;
-        //         dbg!(len);
-        //         let val: u32 = chunk.parse().unwrap();
-        //         let new_component = Component::new(val, pos.neighbours(len));
-        //         x += len;
-        //         dbg!(x);
-        //         self.components.push(new_component);
-        //     }
-        // }
     }
 
     pub fn new() -> Self {
         Self {
             components: Vec::new(),
             symbols: Vec::new(),
+            symbols_vals: Vec::new(),
             area: Area::default(),
         }
     }
@@ -162,6 +144,27 @@ impl Schematic {
         
         }
 
+        total
+    }
+
+    pub fn calc_part_two(&mut self) -> u32 {
+        self.constrain_area();
+        let mut total: u32 = 0;
+        for (i, symbol) in self.symbols_vals.iter().enumerate() {
+            if *symbol != 42 {
+                continue;
+            }
+            let pos = self.symbols[i];
+            let mut ngb_vals: Vec<u32> = Vec::new();
+            for component in self.components.iter() {
+                if component.neigbours_pos.contains(&pos) {
+                    ngb_vals.push(component.value);
+                }
+            }
+            if ngb_vals.len() == 2 {
+                total += ngb_vals.first().unwrap() * ngb_vals.last().unwrap();
+            }
+        }
         total
     }
 }
@@ -184,11 +187,15 @@ fn part_one(filename: &str) {
 fn part_two(filename: &str) {
     let file = File::open(filename).expect("Failed to open file");
     let lines  = BufReader::new(&file).lines();
-    let mut total: u32 = 0;
+    let mut schematic = Schematic::new();
     for line in lines {
+        if let Ok(text) = line {
+            schematic.parse_line(&text);
+        }
     }
+    // dbg!(&schematic);
 
-    println!("Part 2: {}", total);
+    println!("Part 1: {}", schematic.calc_part_two());
 }
 
 fn main() {
