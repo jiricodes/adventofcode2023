@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader}, time::Instant,
 };
 
 #[derive(Debug, Default)]
@@ -25,6 +25,13 @@ impl Encoder {
         } else {
             None
         }
+    }
+
+    pub fn combine(&self, other: &Self) -> Vec<Encoder> {
+        let mut ret: Vec<Encoder> = Vec::new();
+        // |-------|
+        //      |-----
+        ret
     }
 }
 
@@ -110,11 +117,12 @@ fn part_two(filename: &str) {
 
     let mut values: Vec<u64> = Vec::new();
 
-    let mut range = (ranges[0]..ranges[0]+ranges[1]).collect();
-    values.append(&mut range);
+    for i in (0..ranges.len()).step_by(2) {
+        let mut range = (ranges[i]..ranges[i] + ranges[i + 1]).collect();
+        values.append(&mut range);
+    }
 
-    range = (ranges[2]..ranges[2]+ranges[3]).collect();
-    values.append(&mut range);
+    println!("Values length: {}", values.len());
 
     let mut encoder_map = EncoderMap::default();
 
@@ -122,10 +130,12 @@ fn part_two(filename: &str) {
         if let Ok(text) = line {
             if text.len() > 0 {
                 if text.chars().next().unwrap().is_alphabetic() {
+                    let start = Instant::now();
                     encoder_map.encode(values.as_mut_slice());
+                    let duration = start.elapsed();
                     encoder_map.reset();
                     // dbg!(&values);
-                    // println!("{}", text);
+                    println!("Segment {}s", duration.as_secs());
                 } else {
                     encoder_map.add_line(&text);
                 }
