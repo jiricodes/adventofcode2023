@@ -73,14 +73,14 @@ fn part_two(filename: &str) {
     let mut cycles = 0;
     while !current.iter().all(|x| x.chars().last().unwrap() == 'Z') {
         total += 1;
-        if total % 1_000_000_000 == 0 {
+        if total % 1_000_000 == 0 {
             cycles += 1;
             //dbg!(&current);
             let duration = start.elapsed();
             println!(
                 "Segment {}s | {:.3} ips",
                 duration.as_secs(),
-                1_000_000_000.0 * cycles as f64 / duration.as_secs_f64()
+                1_000_000.0 * cycles as f64 / duration.as_secs_f64()
             );
         }
         let dir = inst_cycle.next().unwrap();
