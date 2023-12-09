@@ -2,9 +2,8 @@ use std::{
     collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
-    thread::current,
-    time::Instant,
 };
+use num::integer::lcm;
 
 fn part_one(filename: &str) {
     let file = File::open(filename).expect("Failed to open file");
@@ -47,54 +46,50 @@ fn part_two(filename: &str) {
     let mut lines = BufReader::new(&file).lines();
 
     let instructions = lines.next().unwrap().unwrap();
-    let mut inst_cycle = instructions.chars().cycle();
     let _ = lines.next().unwrap();
-    let mut total: usize = 0;
-    let mut map: HashMap<String, (String, String)> = HashMap::new();
-    let mut current: Vec<String> = Vec::new();
+    let mut map: HashMap<[u8; 3], ([u8; 3], [u8; 3])> = HashMap::new();
+    let mut start_nodes: Vec<[u8; 3]> = Vec::new();
     for line in lines {
         if let Ok(text) = line {
-            let key: &str = text.split(" = ").nth(0).unwrap();
+            let key: [u8; 3] = text
+                .split(" = ")
+                .nth(0)
+                .unwrap()
+                .as_bytes()
+                .try_into()
+                .unwrap();
+            if key[2] == 65 {
+                start_nodes.push(key);
+            }
             let ways: Vec<&str> = text.split(" = ").nth(1).unwrap().split(", ").collect();
-            let _ = map.insert(
-                String::from(key),
-                (String::from(&ways[0][1..]), String::from(&ways[1][0..3])),
-            );
-
-            if key.chars().last().unwrap() == 'A' {
-                current.push(String::from(key));
-            }
+            let left: [u8; 3] = ways[0][1..].as_bytes().try_into().unwrap();
+            let right: [u8; 3] = ways[1][0..3].as_bytes().try_into().unwrap();
+            let _ = map.insert(key, (left, right));
         }
     }
 
-    println!("Number of paths: {}", current.len());
-    let start = Instant::now();
+    let mut totals: Vec<u32> = Vec::new();
+    for start_node in start_nodes {
+        let mut current = start_node;
+        let mut total: u32 = 0;
+        let mut inst_cycle = instructions.chars().cycle();
+        while current[2] != 90 {
+            total += 1;
 
-    let mut cycles = 0;
-    while !current.iter().all(|x| x.chars().last().unwrap() == 'Z') {
-        total += 1;
-        if total % 1_000_000 == 0 {
-            cycles += 1;
-            //dbg!(&current);
-            let duration = start.elapsed();
-            println!(
-                "Segment {}s | {:.3} ips",
-                duration.as_secs(),
-                1_000_000.0 * cycles as f64 / duration.as_secs_f64()
-            );
-        }
-        let dir = inst_cycle.next().unwrap();
-        for i in 0..current.len() {
-            let vals = map.get(&current[i]).unwrap();
+            let dir = inst_cycle.next().unwrap();
+            let vals = map.get(&current).unwrap();
             if dir == 'R' {
-                current[i] = vals.1.clone();
+                current = vals.1;
             } else {
-                current[i] = vals.0.clone();
+                current = vals.0;
             }
         }
+        totals.push(total);
     }
 
-    println!("Part 2: {}", total);
+    // dbg!(totals);
+
+    println!("Part 2: {}", totals.into_iter().reduce(lcm).unwrap());
 }
 
 fn main() {
